@@ -57,6 +57,7 @@ from ..types.exceptions import ContextWindowOverflowException
 from ..types.tools import ToolResult, ToolUse
 from ..types.traces import AttributeValue
 from .agent_result import AgentResult
+from .config import AgentConfig
 from .conversation_manager import (
     ConversationManager,
     SlidingWindowConversationManager,
@@ -218,6 +219,7 @@ class Agent:
         load_tools_from_directory: bool = False,
         trace_attributes: Optional[Mapping[str, AttributeValue]] = None,
         *,
+        config: Optional[Union[str, dict[str, Any]]] = None,
         agent_id: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -255,6 +257,9 @@ class Agent:
             load_tools_from_directory: Whether to load and automatically reload tools in the `./tools/` directory.
                 Defaults to False.
             trace_attributes: Custom trace attributes to apply to the agent's trace span.
+            config: Path to agent configuration file (JSON) or configuration dictionary.
+                Supports agent-format.md specification with fields: tools, model, prompt.
+                Constructor parameters override config file values when both are provided.
             agent_id: Optional ID for the agent, useful for session management and multi-agent scenarios.
                 Defaults to "default".
             name: name of the Agent
@@ -272,6 +277,19 @@ class Agent:
         Raises:
             ValueError: If agent id contains path separators.
         """
+        # Load configuration if provided and merge with constructor parameters
+        # Constructor parameters take precedence over config file values
+        if config is not None:
+            agent_config = AgentConfig(config)
+            
+            # Apply config values only if constructor parameters are None
+            if model is None:
+                model = agent_config.model
+            if tools is None:
+                tools = agent_config.tools
+            if system_prompt is None:
+                system_prompt = agent_config.system_prompt
+
         self.model = BedrockModel() if not model else BedrockModel(model_id=model) if isinstance(model, str) else model
         self.messages = messages if messages is not None else []
 
