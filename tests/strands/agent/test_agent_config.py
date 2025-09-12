@@ -19,12 +19,12 @@ class TestBackwardCompatibility:
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             # This should work exactly as before
             agent = Agent(
-                model="claude-3-haiku",
+                model="us.anthropic.claude-3-haiku-20240307-v1:0",
                 system_prompt="You are helpful",
                 tools=["fs_read"]
             )
             
-            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
             assert agent.system_prompt == "You are helpful"
             assert agent.name == "Strands Agents"  # Default name
 
@@ -36,21 +36,21 @@ class TestAgentConfig:
         """Test loading config from dictionary."""
         config_dict = {
             "tools": ["fs_read", "fs_write"],
-            "model": "claude-3-sonnet",
+            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "You are a helpful assistant"
         }
         
         config = AgentConfig(config_dict)
         
         assert config.tools == ["fs_read", "fs_write"]
-        assert config.model == "claude-3-sonnet"
+        assert config.model == "us.anthropic.claude-sonnet-4-20250514-v1:0"
         assert config.system_prompt == "You are a helpful assistant"
 
     def test_load_from_file(self):
         """Test loading config from JSON file."""
         config_dict = {
             "tools": ["execute_bash"],
-            "model": "claude-3-haiku",
+            "model": "us.anthropic.claude-3-haiku-20240307-v1:0",
             "prompt": "You are a coding assistant"
         }
         
@@ -62,7 +62,7 @@ class TestAgentConfig:
             config = AgentConfig(temp_path)
             
             assert config.tools == ["execute_bash"]
-            assert config.model == "claude-3-haiku"
+            assert config.model == "us.anthropic.claude-3-haiku-20240307-v1:0"
             assert config.system_prompt == "You are a coding assistant"
         finally:
             Path(temp_path).unlink()
@@ -105,21 +105,21 @@ class TestAgentWithConfig:
         """Test Agent initialization with config dictionary."""
         config = {
             "tools": ["fs_read"],
-            "model": "claude-3-sonnet",
+            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "You are helpful"
         }
         
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             agent = Agent(config=config)
             
-            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-sonnet-4-20250514-v1:0")
             assert agent.system_prompt == "You are helpful"
 
     def test_agent_with_config_file(self):
         """Test Agent initialization with config file."""
         config_dict = {
             "tools": ["execute_bash"],
-            "model": "claude-3-haiku",
+            "model": "us.anthropic.claude-3-haiku-20240307-v1:0",
             "prompt": "You are a coding assistant"
         }
         
@@ -131,7 +131,7 @@ class TestAgentWithConfig:
             with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
                 agent = Agent(config=temp_path)
                 
-                mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+                mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
                 assert agent.system_prompt == "You are a coding assistant"
         finally:
             Path(temp_path).unlink()
@@ -140,40 +140,40 @@ class TestAgentWithConfig:
         """Test that constructor parameters override config values."""
         config = {
             "tools": ["fs_read"],
-            "model": "claude-3-sonnet",
+            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "Config prompt"
         }
         
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             agent = Agent(
                 config=config,
-                model="claude-3-haiku",
+                model="us.anthropic.claude-3-haiku-20240307-v1:0",
                 system_prompt="Constructor prompt"
             )
             
-            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
             assert agent.system_prompt == "Constructor prompt"
 
     def test_config_values_used_when_constructor_params_none(self):
         """Test that config values are used when constructor parameters are None."""
         config = {
             "tools": ["fs_write"],
-            "model": "claude-3-sonnet",
+            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "Config prompt"
         }
         
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             agent = Agent(config=config, model=None, system_prompt=None)
             
-            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-sonnet-4-20250514-v1:0")
             assert agent.system_prompt == "Config prompt"
 
     def test_agent_without_config(self):
         """Test that Agent works normally without config parameter."""
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
-            agent = Agent(model="claude-3-haiku", system_prompt="Test prompt")
+            agent = Agent(model="us.anthropic.claude-3-haiku-20240307-v1:0", system_prompt="Test prompt")
             
-            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
             assert agent.system_prompt == "Test prompt"
 
     def test_config_error_handling(self):
@@ -183,10 +183,10 @@ class TestAgentWithConfig:
 
     def test_partial_config(self):
         """Test Agent with partial config (only some fields specified)."""
-        config = {"model": "claude-3-sonnet"}
+        config = {"model": "us.anthropic.claude-sonnet-4-20250514-v1:0"}
         
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             agent = Agent(config=config, system_prompt="Constructor prompt")
             
-            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            mock_bedrock.assert_called_with(model_id="us.anthropic.claude-sonnet-4-20250514-v1:0")
             assert agent.system_prompt == "Constructor prompt"
