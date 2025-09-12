@@ -1,0 +1,174 @@
+"""Tests for agent configuration functionality."""
+
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from strands.agent import Agent
+from strands.agent.config import AgentConfig
+
+
+class TestAgentConfig:
+    """Test AgentConfig class functionality."""
+
+    def test_load_from_dict(self):
+        """Test loading config from dictionary."""
+        config_dict = {
+            "tools": ["fs_read", "fs_write"],
+            "model": "claude-3-sonnet",
+            "prompt": "You are a helpful assistant"
+        }
+        
+        config = AgentConfig(config_dict)
+        
+        assert config.tools == ["fs_read", "fs_write"]
+        assert config.model == "claude-3-sonnet"
+        assert config.system_prompt == "You are a helpful assistant"
+
+    def test_load_from_file(self):
+        """Test loading config from JSON file."""
+        config_dict = {
+            "tools": ["execute_bash"],
+            "model": "claude-3-haiku",
+            "prompt": "You are a coding assistant"
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config_dict, f)
+            temp_path = f.name
+        
+        try:
+            config = AgentConfig(temp_path)
+            
+            assert config.tools == ["execute_bash"]
+            assert config.model == "claude-3-haiku"
+            assert config.system_prompt == "You are a coding assistant"
+        finally:
+            Path(temp_path).unlink()
+
+    def test_missing_file_error(self):
+        """Test error handling for missing config file."""
+        with pytest.raises(FileNotFoundError, match="Agent config file not found"):
+            AgentConfig("/nonexistent/path/config.json")
+
+    def test_invalid_json_error(self):
+        """Test error handling for invalid JSON."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write("{ invalid json }")
+            temp_path = f.name
+        
+        try:
+            with pytest.raises(json.JSONDecodeError, match="Invalid JSON in config file"):
+                AgentConfig(temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_invalid_config_source_type(self):
+        """Test error handling for invalid config source type."""
+        with pytest.raises(ValueError, match="config_source must be a file path string or dictionary"):
+            AgentConfig(123)
+
+    def test_missing_fields(self):
+        """Test handling of missing configuration fields."""
+        config = AgentConfig({})
+        
+        assert config.tools is None
+        assert config.model is None
+        assert config.system_prompt is None
+
+
+class TestAgentWithConfig:
+    """Test Agent class with configuration support."""
+
+    def test_agent_with_config_dict(self):
+        """Test Agent initialization with config dictionary."""
+        config = {
+            "tools": ["fs_read"],
+            "model": "claude-3-sonnet",
+            "prompt": "You are helpful"
+        }
+        
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            agent = Agent(config=config)
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            assert agent.system_prompt == "You are helpful"
+
+    def test_agent_with_config_file(self):
+        """Test Agent initialization with config file."""
+        config_dict = {
+            "tools": ["execute_bash"],
+            "model": "claude-3-haiku",
+            "prompt": "You are a coding assistant"
+        }
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(config_dict, f)
+            temp_path = f.name
+        
+        try:
+            with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+                agent = Agent(config=temp_path)
+                
+                mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+                assert agent.system_prompt == "You are a coding assistant"
+        finally:
+            Path(temp_path).unlink()
+
+    def test_constructor_params_override_config(self):
+        """Test that constructor parameters override config values."""
+        config = {
+            "tools": ["fs_read"],
+            "model": "claude-3-sonnet",
+            "prompt": "Config prompt"
+        }
+        
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            agent = Agent(
+                config=config,
+                model="claude-3-haiku",
+                system_prompt="Constructor prompt"
+            )
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            assert agent.system_prompt == "Constructor prompt"
+
+    def test_config_values_used_when_constructor_params_none(self):
+        """Test that config values are used when constructor parameters are None."""
+        config = {
+            "tools": ["fs_write"],
+            "model": "claude-3-sonnet",
+            "prompt": "Config prompt"
+        }
+        
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            agent = Agent(config=config, model=None, system_prompt=None)
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            assert agent.system_prompt == "Config prompt"
+
+    def test_agent_without_config(self):
+        """Test that Agent works normally without config parameter."""
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            agent = Agent(model="claude-3-haiku", system_prompt="Test prompt")
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            assert agent.system_prompt == "Test prompt"
+
+    def test_config_error_handling(self):
+        """Test error handling for invalid config."""
+        with pytest.raises(ValueError, match="Failed to load agent configuration"):
+            Agent(config="/nonexistent/config.json")
+
+    def test_partial_config(self):
+        """Test Agent with partial config (only some fields specified)."""
+        config = {"model": "claude-3-sonnet"}
+        
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            agent = Agent(config=config, system_prompt="Constructor prompt")
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-sonnet")
+            assert agent.system_prompt == "Constructor prompt"
