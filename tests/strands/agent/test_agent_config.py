@@ -18,10 +18,12 @@ class TestBackwardCompatibility:
         """Test that Agent can be created without config parameter."""
         with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
             # This should work exactly as before
+            from strands_tools import shell
+            
             agent = Agent(
                 model="us.anthropic.claude-3-haiku-20240307-v1:0",
                 system_prompt="You are helpful",
-                tools=["file_read"]
+                tools=[shell]
             )
             
             mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
@@ -35,21 +37,21 @@ class TestAgentConfig:
     def test_load_from_dict(self):
         """Test loading config from dictionary."""
         config_dict = {
-            "tools": ["file_read", "file_write"],
+            "tools": ["calculator", "shell"],
             "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "You are a helpful assistant"
         }
         
         config = AgentConfig(config_dict)
         
-        assert config.tools == ["file_read", "file_write"]
+        assert config.tools == ["calculator", "shell"]
         assert config.model == "us.anthropic.claude-sonnet-4-20250514-v1:0"
         assert config.system_prompt == "You are a helpful assistant"
 
     def test_load_from_file(self):
         """Test loading config from JSON file."""
         config_dict = {
-            "tools": ["shell"],
+            "tools": ["./tools/shell_tool.py"],
             "model": "us.anthropic.claude-3-haiku-20240307-v1:0",
             "prompt": "You are a coding assistant"
         }
@@ -61,7 +63,7 @@ class TestAgentConfig:
         try:
             config = AgentConfig(temp_path)
             
-            assert config.tools == ["shell"]
+            assert config.tools == ["./tools/shell_tool.py"]
             assert config.model == "us.anthropic.claude-3-haiku-20240307-v1:0"
             assert config.system_prompt == "You are a coding assistant"
         finally:
