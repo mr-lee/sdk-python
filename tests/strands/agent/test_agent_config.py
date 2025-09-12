@@ -21,7 +21,7 @@ class TestBackwardCompatibility:
             agent = Agent(
                 model="us.anthropic.claude-3-haiku-20240307-v1:0",
                 system_prompt="You are helpful",
-                tools=["fs_read"]
+                tools=["file_read"]
             )
             
             mock_bedrock.assert_called_with(model_id="us.anthropic.claude-3-haiku-20240307-v1:0")
@@ -35,21 +35,21 @@ class TestAgentConfig:
     def test_load_from_dict(self):
         """Test loading config from dictionary."""
         config_dict = {
-            "tools": ["fs_read", "fs_write"],
+            "tools": ["file_read", "file_write"],
             "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "You are a helpful assistant"
         }
         
         config = AgentConfig(config_dict)
         
-        assert config.tools == ["fs_read", "fs_write"]
+        assert config.tools == ["file_read", "file_write"]
         assert config.model == "us.anthropic.claude-sonnet-4-20250514-v1:0"
         assert config.system_prompt == "You are a helpful assistant"
 
     def test_load_from_file(self):
         """Test loading config from JSON file."""
         config_dict = {
-            "tools": ["execute_bash"],
+            "tools": ["shell"],
             "model": "us.anthropic.claude-3-haiku-20240307-v1:0",
             "prompt": "You are a coding assistant"
         }
@@ -61,7 +61,7 @@ class TestAgentConfig:
         try:
             config = AgentConfig(temp_path)
             
-            assert config.tools == ["execute_bash"]
+            assert config.tools == ["shell"]
             assert config.model == "us.anthropic.claude-3-haiku-20240307-v1:0"
             assert config.system_prompt == "You are a coding assistant"
         finally:
@@ -104,7 +104,7 @@ class TestAgentWithConfig:
     def test_agent_with_config_dict(self):
         """Test Agent initialization with config dictionary."""
         config = {
-            "tools": ["fs_read"],
+            "tools": ["file_read"],
             "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "You are helpful"
         }
@@ -118,7 +118,7 @@ class TestAgentWithConfig:
     def test_agent_with_config_file(self):
         """Test Agent initialization with config file."""
         config_dict = {
-            "tools": ["execute_bash"],
+            "tools": ["shell"],
             "model": "us.anthropic.claude-3-haiku-20240307-v1:0",
             "prompt": "You are a coding assistant"
         }
@@ -139,7 +139,7 @@ class TestAgentWithConfig:
     def test_constructor_params_override_config(self):
         """Test that constructor parameters override config values."""
         config = {
-            "tools": ["fs_read"],
+            "tools": ["file_read"],
             "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "Config prompt"
         }
@@ -157,7 +157,7 @@ class TestAgentWithConfig:
     def test_config_values_used_when_constructor_params_none(self):
         """Test that config values are used when constructor parameters are None."""
         config = {
-            "tools": ["fs_write"],
+            "tools": ["file_write"],
             "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
             "prompt": "Config prompt"
         }
