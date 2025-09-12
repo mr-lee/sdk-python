@@ -11,6 +11,24 @@ from strands.agent import Agent
 from strands.agent.config import AgentConfig
 
 
+class TestBackwardCompatibility:
+    """Test that existing Agent usage continues to work."""
+
+    def test_existing_agent_usage_still_works(self):
+        """Test that Agent can be created without config parameter."""
+        with patch('strands.agent.agent.BedrockModel') as mock_bedrock:
+            # This should work exactly as before
+            agent = Agent(
+                model="claude-3-haiku",
+                system_prompt="You are helpful",
+                tools=["fs_read"]
+            )
+            
+            mock_bedrock.assert_called_with(model_id="claude-3-haiku")
+            assert agent.system_prompt == "You are helpful"
+            assert agent.name == "Strands Agents"  # Default name
+
+
 class TestAgentConfig:
     """Test AgentConfig class functionality."""
 
