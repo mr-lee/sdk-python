@@ -280,15 +280,18 @@ class Agent:
         # Load configuration if provided and merge with constructor parameters
         # Constructor parameters take precedence over config file values
         if config is not None:
-            agent_config = AgentConfig(config)
-            
-            # Apply config values only if constructor parameters are None
-            if model is None:
-                model = agent_config.model
-            if tools is None:
-                tools = agent_config.tools
-            if system_prompt is None:
-                system_prompt = agent_config.system_prompt
+            try:
+                agent_config = AgentConfig(config)
+                
+                # Apply config values only if constructor parameters are None
+                if model is None:
+                    model = agent_config.model
+                if tools is None:
+                    tools = agent_config.tools
+                if system_prompt is None:
+                    system_prompt = agent_config.system_prompt
+            except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
+                raise ValueError(f"Failed to load agent configuration: {e}") from e
 
         self.model = BedrockModel() if not model else BedrockModel(model_id=model) if isinstance(model, str) else model
         self.messages = messages if messages is not None else []
